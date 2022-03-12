@@ -1,3 +1,4 @@
+from tabnanny import verbose
 import numpy as np
 import os
 from eppy import *
@@ -52,7 +53,8 @@ class opt_functions():
             # save the idf here 
             idf0.save()
             # save the new vals
-            new_vals[pc] = new_val
+            new_vals[pc] = [new_val, run_folder]
+            
         print(group_folder)
         # save to csv in group folder 
         new_vals_df = pd.DataFrame.from_dict(new_vals, orient="index")
@@ -73,19 +75,20 @@ class opt_functions():
             print(sub_dir)
             idf_path = os.path.join(dir, "opt.idf")
             idf0 = IDF(idf_path, self.epw)
-            idf0.run(output_directory = dir)
+            idf0.run(output_directory = dir, verbose="q")
 
 
     def extract_data(self, group_path):
         "can execute after run_idfs to get the data"
         print(group_path)
-
-        sub_dirs = self.get_sub_dirs(group_path)
-
+        # extract data based on values csv 
+        vals = pd.read_csv(os.path.join(group_path, "values.csv"))
+        
+        sub_dir_keys = list(vals["Unnamed: 0"])
+        sub_dirs = list(vals["1"])
+        
         sub_dir_data = OrderedDict()
-        for sub_dir in sub_dirs:
-            dir = os.path.join(group_path, sub_dir)
-
+        for dir, key in zip(sub_dirs, sub_dir_keys):
             # energy 
             sql_path = os.path.join(dir, "eplusout.sql")
             sqld = SQLiteResult(sql_path)
@@ -96,6 +99,7 @@ class opt_functions():
             namedtable = fasthtml.tablebyname(filehandle, "Tariff Summary")
             table_rows = namedtable[1]
 
+            # compile data
             data = OrderedDict({
                 # energy kwh 
                 "elect": sqld.data_collections_by_output_name("Electricity:Facility")[-1].total,
@@ -109,25 +113,28 @@ class opt_functions():
             data["total"] = data["elect"] +  data["hot"] +  data["chill"] 
             data["total_c"] = data["elect_c"] +  data["hot_c"] +  data["chill_c"] 
 
-            sub_dir_data[sub_dir] = data
+            sub_dir_data[key] = data
         
         # dataframe with energy and cost data 
         df = pd.DataFrame.from_dict(sub_dir_data, orient="index")
 
-        # add edited values 
-        vals = pd.read_csv(os.path.join(group_path, "values.csv"))
+        # add eppy adjusted values and percent change 
         dict_val =  OrderedDict()
-        for i, val in zip(list(df.index), vals['0']):
-            dict_val[i] = val
-        df["vals"] = dict_val.values()
+        for i, val, pc in zip(list(df.index), vals['0'], vals["Unnamed: 0"]):
+            dict_val[i] = [val, pc]
+        df["vals"] = [v[0] for v in dict_val.values()]
+        df["perc_change"] = [v[1] for v in dict_val.values()]
 
         # save as csv 
         df.to_csv(os.path.join(group_path, "data.csv"))
         
         # add the edited values 
-        return df
+        return df, vals
 
-    "start of eppy opt functions "
+
+    
+
+    # ----------------------     "start of eppy opt functions" --------------------
 
     def perc_change_val(self, pc, xo):
         "given percent change pc, and xo, calc x_new, xn"
@@ -153,9 +160,64 @@ class opt_functions():
         print([s  for s in idf0.idfobjects["WindowMaterial:SimpleGlazingSystem"] if s.Name == "Thornton Window Material 1"][0])
         return (idf0, new_val)
 
+    # simple material to vary walls, roof, floor
+    def make_new_const(self, u_factor, idf0, pc, curr_const):
+        # convert to r value 
+        r_val = 1/ u_factor 
+        # determine new r value 
+        new_val = self.perc_change_val(pc, r_val)
+
+        #  create new material
+        wall_mat_obj = idf0.newidfobject(
+            "Material:NoMass",
+            Name="ExperimentalMaterial",
+            Roughness="Smooth", # like stucco outside material
+            Thermal_Resistance=new_val
+        )
+        
+        # assign it to a construction 
+        wall_const_obj = idf0.newidfobject(
+            "Construction",
+            Name="ExperimentalConstruction",
+            Outside_Layer="ExperimentalMaterial"
+        )
+
+        # replace all building surfaces with this construction with the exp one 
+        ext_surfaces = [s  for s in idf0.idfobjects["BuildingSurface:Detailed"] if s.Construction_Name == curr_const ]
+        for s in ext_surfaces:
+            s.Construction_Name = "ExperimentalConstruction"
+        return(idf0, new_val)
+
+
+
+    def change_wall_r(self, idf0, pc):
+        # current value from html of calibrated model, 
+        #  Report: Envelope Summary, U Factor with No Film
+        u_factor = 0.284 #W / m2-K  
+        curr_const = "Thornton Ext Wall"
+        idf0, new_val = self.make_new_const(u_factor, idf0, pc, curr_const)
+        return (idf0, new_val)
+
+    def change_roof_r(self, idf0, pc):
+        # current value from html of calibrated model
+        u_factor = 0.283 #W / m2-K  
+        curr_const = "ASHRAE 90.1-2010 ExtRoof IEAD ClimateZone 2-8"
+        idf0, new_val = self.make_new_const(u_factor, idf0, pc, curr_const)
+        return (idf0, new_val)
+
+    def change_floor_r(self, idf0, pc):
+        # current value from html of calibrated model
+        u_factor = 5.634 #W / m2-K  
+        curr_const = "ExtSlabCarpet 4in ClimateZone 1-8"
+        idf0, new_val = self.make_new_const(u_factor, idf0, pc, curr_const)
+        return (idf0, new_val)
+
     def get_epppy_change_fun(self, key):
         change_fun_dict = {
-            "SHGC": self.change_window_shgc
+            "SHGC": self.change_window_shgc,
+            "WALL": self.change_wall_r,
+            "ROOF": self.change_roof_r,
+            "FLOOR": self.change_floor_r
         }
 
         return change_fun_dict[key]
