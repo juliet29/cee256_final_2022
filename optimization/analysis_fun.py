@@ -22,7 +22,7 @@ def timestamp():
 
 
 def calc_marker_size(arr, curr_index):
-    return len(arr)*2 - (curr_index+1)*1.999
+    return max(len(arr)*2 - (curr_index+1)*1.999,0)
 
 
 def four_compare(group_keys, group_data, group_of_interest):
@@ -33,8 +33,8 @@ def four_compare(group_keys, group_data, group_of_interest):
         subplot_titles=(
             "Energy vs Adjusted Values",
             "Energy vs Percent Change",
-            "Energy Delta vs Cost Delta",
-            "Energy Delta vs Adjusted Values"
+            "Energy Savings vs Cost Savings",
+            "Energy Savings vs Adjusted Values"
         ))
 
     # plot 1
@@ -61,19 +61,28 @@ def four_compare(group_keys, group_data, group_of_interest):
 
     # # plot 3
     for (ix, k), shade in zip(enumerate(group_data.keys()), shades):
-        x = group_data[k]["total_c"] - group_data[k].loc[0]["total_c"]
-        y = group_data[k]["total"] - group_data[k].loc[0]["total"]
+        x_ = group_data[k]["total_c"] - group_data[k].loc[0]["total_c"]
+        y_ = group_data[k]["total"] - group_data[k].loc[0]["total"]
+
+        # concentrate on possibility of savings
+        x = [-1*min(val, 0) for val in x_]
+        y = [-1*min(val, 0) for val in y_]
+
         marker_size = calc_marker_size(x, ix)
         fig.add_trace(go.Scatter(x=x, y=y, name=k, mode='lines+markers', marker_size=marker_size,
                                  legendgroup="Groups", showlegend=False, line=dict(color=shade)),
                       row=2, col=1)
-    fig['layout']['xaxis3']['title'] = "Cost Delta [$]"
-    fig['layout']['yaxis3']['title'] = "Energy Delta [kWh]"
+    fig['layout']['xaxis3']['title'] = "Cost Savings [$]"
+    fig['layout']['yaxis3']['title'] = "Energy Savings [kWh]"
 
     # # plot 4
     for (ix, k), shade in zip(enumerate(group_data.keys()), shades):
         x = group_data[k]["vals"]
-        y = group_data[k]["total"] - group_data[k].loc[0]["total"]
+        y_ = group_data[k]["total"] - group_data[k].loc[0]["total"]
+
+        # concentrate on possibility of savings
+        y = [-1*min(val, 0) for val in y_]
+
         marker_size = calc_marker_size(x, ix)
         fig.add_trace(go.Scatter(x=x, y=y, name=k, mode='lines+markers', marker_size=marker_size,
                                  legendgroup="Groups", showlegend=False, line=dict(color=shade)),

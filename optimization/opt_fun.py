@@ -55,7 +55,9 @@ class opt_functions():
             self.root_idf.save(idf0_path)
 
             # initialize this new idf
+            print(f"CREATING RUN: {opt_group_name} {pc}")
             idf0 = IDF(idf0_path, self.epw)
+            print("\n")
 
             # call function to modify the idf
             idf_adjust_fun = self.get_epppy_change_fun(fun_key)
@@ -298,27 +300,24 @@ class opt_functions():
 
     # setpoints
     def change_setp(self, idf0, pc, sched_name):
-        sched = [s for s in idf0.idfobjects["Schedule:Day:Interval"]
-                 if s.Name == sched_name][0]
+        sched = [s  for s in idf0.idfobjects["Schedule:Day:Interval"] if s.Name == sched_name][0]
         curr_vals = {
             "val_1": sched.Value_Until_Time_1,
             "val_2": sched.Value_Until_Time_2,
             "val_3": sched.Value_Until_Time_3
         }
         # create new values
-        new_vals = {k: self.perc_change_val(pc, v)
-                    for k, v in curr_vals.items()}
-        # change the values
+        new_vals = {k: self.perc_change_val(pc, v) for k, v in curr_vals.items()}
+        # change the values 
         for field in sched.fieldnames:
             for i in range(3):
                 if field == f"Value_Until_Time_{i+1}":
                     sched[field] = new_vals[f"val_{i+1}"]
-        # return avg value
+        # return avg value 
         new_val = np.mean(list(new_vals.values()))
 
-        # print to check
-        new_sched = [
-            s for s in idf0.idfobjects["Schedule:Day:Interval"] if s.Name == sched_name][0]
+        # print to check 
+        new_sched = [s  for s in idf0.idfobjects["Schedule:Day:Interval"] if s.Name == sched_name][0]
         for field in new_sched.fieldnames:
             for i in range(3):
                 if field == f"Value_Until_Time_{i+1}":
@@ -328,15 +327,13 @@ class opt_functions():
 
     def change_clgsetp(self, idf0, pc):
         idf0, new_val = self.change_setp(
-            idf0, pc, "Medium Office ClgSetp Default Schedule 1")
+            idf0, pc, "Medium Office ClgSetp Default Schedule")
         return (idf0, new_val)
 
     def change_htgsetp(self, idf0, pc):
         idf0, new_val = self.change_setp(
-            idf0, pc, "Medium Office HtgSetp Default Schedule 1")
+            idf0, pc, "Medium Office HtgSetp Default Schedule")
         return (idf0, new_val)
-
-    "day light conrols"
 
     def centeroidnp(self, arr):
         length = arr.shape[0]
@@ -409,14 +406,14 @@ class opt_functions():
             day_controls = idf0.idfobjects["Daylighting:Controls"]
             for daycs in day_controls:
                 extlist = extfields.extensiblefields2list(daycs, nested=True)
-                print(extlist, len(extlist))
+                # print(extlist, len(extlist))
                 del extlist[1:10]
-                print(extlist, len(extlist))
+                # print(extlist, len(extlist))
                 extfields.list2extensiblefields(daycs, extlist)
 
             # print(control)
             new_val = 1  # zones made
-            print(idf0.idfobjects["Daylighting:Controls"])
+            print([d.Name for d in idf0.idfobjects["Daylighting:Controls"]])
 
         else:
             new_val = 0
