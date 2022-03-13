@@ -26,7 +26,11 @@ test = of(root_idf_path)
 pc_dict = {
     "TEST": [-1],
     "NARROW": [-10, 10],
-    "WIDE": [-98, -50, -25, 0, 25, 50, 98]
+    "WIDE": [-98, -50, -25, 0, 25, 50, 98],
+    "NEGATIVE": [-98, -75, -50, -25, -10, -5, -2.5, -1, 0],
+    "POSITIVE": [0, 1, 2.5, 5, 10, 25, 50, 98, 75],
+    "BINARY": [0,1]
+
 }
 pc_arr = pc_dict[args.pc_arr_key]
 
@@ -34,7 +38,8 @@ pc_arr = pc_dict[args.pc_arr_key]
 # make new idfs
 group_folder = test.new_idfs(args.group_name, args.fun_key, pc_arr)
 
-test.run_idfs(group_folder)
-
-df = test.extract_data(group_folder)
-display(df)
+# will only get here if the group folder name is unique 
+if group_folder:
+    test.run_idfs(group_folder)
+    df = test.extract_data(group_folder)
+    display(df)

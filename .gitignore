@@ -19,6 +19,8 @@ epluszsz.csv
 **/group_models
 *.osw
 *.skp
+**/opt_models/**/eplusout.sql
+
 
 
 **/__pycache__
