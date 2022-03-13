@@ -7,11 +7,11 @@ parser = argparse.ArgumentParser(description='generate and run many idf files')
 parser.add_argument("-r", "--root_idf",
                     help="root idf that group will be based on", required=True)
 parser.add_argument("-n", "--group_name",
-                    help="root idf that group will be based on", required=True)
+                    help="name for the group of opt to be performed", required=True)
 parser.add_argument(
-    "-k", "--fun_key", help="root idf that group will be based on", default="SHGC")
+    "-k", "--fun_key", help="type of changes to make to the idf", default="SHGC")
 parser.add_argument("-p", "--pc_arr_key",
-                    help="root idf that group will be based on", default="TEST")
+                    help="key corresponding to array of percent change to consider", default="TEST")
 
 args = parser.parse_args()
 

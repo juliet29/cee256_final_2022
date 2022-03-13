@@ -9,7 +9,7 @@ import numpy as np
 import pickle
 import argparse
 
-parser = argparse.ArgumentParser(description='update and run an idf file ')
+parser = argparse.ArgumentParser(description='update and run an idf file')
 
 parser.add_argument("-f", "--folderToRun", help="entire path before the many subfolders", default=None)
 

@@ -10,7 +10,8 @@
 *.mtr
 *.rdd
 *.shd
-*.csv
+eplusssz.csv
+epluszsz.csv
 *.rb
 *.DS_Store
 *.osm
@@ -19,5 +20,7 @@
 *.osw
 *.skp
 
+
+**/__pycache__
 
 **/.ipynb_checkpoints

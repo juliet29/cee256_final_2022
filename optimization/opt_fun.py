@@ -133,8 +133,9 @@ class opt_functions():
 
 
     
-
+    # -----------------------------------------------------------------------------
     # ----------------------     "start of eppy opt functions" --------------------
+    # -----------------------------------------------------------------------------
 
     def perc_change_val(self, pc, xo):
         "given percent change pc, and xo, calc x_new, xn"
@@ -156,6 +157,19 @@ class opt_functions():
         new_val = self.perc_change_val(pc, curr_val)
         # adjust the idf 
         window_mat.Solar_Heat_Gain_Coefficient = new_val
+        # return the idf
+        print([s  for s in idf0.idfobjects["WindowMaterial:SimpleGlazingSystem"] if s.Name == "Thornton Window Material 1"][0])
+        return (idf0, new_val)
+
+    def change_window_u_factor(self, idf0, pc):
+        window_mat = [s  for s in idf0.idfobjects["WindowMaterial:SimpleGlazingSystem"] if s.Name == "Thornton Window Material 1"][0]
+        # get current value 
+        curr_val = window_mat.UFactor
+        print(curr_val)
+        # calculate new values 
+        new_val = self.perc_change_val(pc, curr_val)
+        # adjust the idf 
+        window_mat.UFactor = new_val
         # return the idf
         print([s  for s in idf0.idfobjects["WindowMaterial:SimpleGlazingSystem"] if s.Name == "Thornton Window Material 1"][0])
         return (idf0, new_val)
@@ -212,12 +226,30 @@ class opt_functions():
         idf0, new_val = self.make_new_const(u_factor, idf0, pc, curr_const)
         return (idf0, new_val)
 
+    def change_floor_r_2(self, idf0, pc):
+        # current value from html of calibrated model
+        u_factor = 0.284 #W / m2-K  
+        curr_const = "ExtSlabCarpet 4in ClimateZone 1-8"
+        idf0, new_val = self.make_new_const(u_factor, idf0, pc, curr_const)
+        return (idf0, new_val)
+
+    def change_roof_r_2(self, idf0, pc):
+        # current value from html of calibrated model
+        u_factor = 0.284 #W / m2-K  
+        curr_const = "ExtSlabCarpet 4in ClimateZone 1-8"
+        idf0, new_val = self.make_new_const(u_factor, idf0, pc, curr_const)
+        return (idf0, new_val)
+
     def get_epppy_change_fun(self, key):
         change_fun_dict = {
             "SHGC": self.change_window_shgc,
+            "WINDOW_U":self.change_window_u_factor,
             "WALL": self.change_wall_r,
             "ROOF": self.change_roof_r,
-            "FLOOR": self.change_floor_r
+            "FLOOR": self.change_floor_r,
+            # floor and roof with initial u-val same as walls 
+            "FLOOR_2": self.change_floor_r_2,
+            "ROOF_2": self.change_roof_r_2,
         }
 
         return change_fun_dict[key]
