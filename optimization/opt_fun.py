@@ -250,7 +250,7 @@ class opt_functions():
     def change_roof_r_2(self, idf0, pc):
         # current value from html of calibrated model
         u_factor = 0.284  # W / m2-K
-        curr_const = "ExtSlabCarpet 4in ClimateZone 1-8"
+        curr_const = "ASHRAE 90.1-2010 ExtRoof IEAD ClimateZone 2-8"
         idf0, new_val = self.make_new_const(u_factor, idf0, pc, curr_const)
         return (idf0, new_val)
 

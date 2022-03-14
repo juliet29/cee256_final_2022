@@ -22,31 +22,40 @@ def timestamp():
 
 
 def calc_marker_size(arr, curr_index):
-    return max(len(arr)*2 - (curr_index+1)*1.999,0)
+    return max(len(arr)*2 - (curr_index+1)*1.999, 0)
 
 
-def four_compare(group_keys, group_data, group_of_interest):
+def four_compare(group_keys, group_data, group_of_interest, group_labels):
     shades = px.colors.qualitative.Vivid[:len(group_keys)]
 
     fig = make_subplots(
         rows=2, cols=2,
         subplot_titles=(
-            "Energy vs Adjusted Values",
-            "Energy vs Percent Change",
+            "Energy Consumption vs Adjusted Values",
+            "Energy Consumption vs Percent Change",
             "Energy Savings vs Cost Savings",
-            "Energy Savings vs Adjusted Values"
+            "Energy Savings vs Adjusted Values",
+            # "Cost Savings vs Adjusted Values"
         ))
 
     # plot 1
     for (ix, k), shade in zip(enumerate(group_data.keys()), shades):
         y = group_data[k]["total"]
-        x = group_data[k]["vals"]
+        x = group_data[k]["imperial_vals"]
+        name = group_labels[k]
         marker_size = calc_marker_size(x, ix)
-        fig.add_trace(go.Scatter(x=x, y=y, name=k, mode='lines+markers', marker_size=marker_size,
+        fig.add_trace(go.Scatter(x=x, y=y, name=name, mode='lines+markers', marker_size=marker_size,
                                  legendgroup="Groups", showlegend=True, line=dict(color=shade)),
                       row=1, col=1)
     fig['layout']['xaxis']['title'] = "Adjusted Values"
-    fig['layout']['yaxis']['title'] = "Energy (kWh)"
+    fig['layout']['yaxis']['title'] = "Energy [kWh]"
+
+    # fig.update_layout(legend=dict(
+    #     yanchor="bottom",
+    #     y=-0.05,
+    #     xanchor="center",
+    #     x=0
+    # ))
 
     # # plot 2
     for (ix, k), shade in zip(enumerate(group_data.keys()), shades):
@@ -77,7 +86,7 @@ def four_compare(group_keys, group_data, group_of_interest):
 
     # # plot 4
     for (ix, k), shade in zip(enumerate(group_data.keys()), shades):
-        x = group_data[k]["vals"]
+        x = group_data[k]["imperial_vals"]
         y_ = group_data[k]["total"] - group_data[k].loc[0]["total"]
 
         # concentrate on possibility of savings
@@ -87,14 +96,29 @@ def four_compare(group_keys, group_data, group_of_interest):
         fig.add_trace(go.Scatter(x=x, y=y, name=k, mode='lines+markers', marker_size=marker_size,
                                  legendgroup="Groups", showlegend=False, line=dict(color=shade)),
                       row=2, col=2)
-    fig['layout']['xaxis4']['title'] = "Values"
+    fig['layout']['xaxis4']['title'] = "Adjusted Values"
+
+    # # # plot 5
+    # for (ix, k), shade in zip(enumerate(group_data.keys()), shades):
+    #     x = group_data[k]["vals"]
+    #     y_ = group_data[k]["total_c"] - group_data[k].loc[0]["total_c"]
+
+    #     # concentrate on possibility of savings
+    #     y = [-1*min(val, 0) for val in y_]
+
+    #     marker_size = calc_marker_size(x, ix)
+    #     fig.add_trace(go.Scatter(x=x, y=y, name=k, mode='lines+markers', marker_size=marker_size,
+    #                              legendgroup="Groups", showlegend=False, line=dict(color=shade)),
+    #                   row=3, col=1)
+    # fig['layout']['xaxis5']['title'] = "Values"
+    # fig['layout']['xaxis5']['title'] = "Cost Savings [$]"
 
     fig.update_layout(title=f"Comparisons for {group_of_interest}")
 
     fig.show()
 
-    # make public
-    time = timestamp()
+    # # make public
+    # time = timestamp()
     link = py.plot(
         fig, filename=f"{group_of_interest}_raw", auto_open=False)
     print("Link ", link)
@@ -106,8 +130,8 @@ def correlations(group_data, group_of_interest):
 
     corr_data = {}
     for k in group_data.keys():
-        corr_df = group_data[k][["total", "vals"]].corr()
-        corr_data[k] = corr_df.loc["vals"]["total"]
+        corr_df = group_data[k][["total", "imperial_vals"]].corr()
+        corr_data[k] = corr_df.loc["imperial_vals"]["total"]
 
     fig.add_trace(go.Bar(x=list(corr_data.keys()), y=list(corr_data.values())))
     fig.update_layout(xaxis_title=f"Groups",
@@ -116,8 +140,8 @@ def correlations(group_data, group_of_interest):
 
     fig.show()
 
-    # make public
-    time = timestamp()
-    link = py.plot(
-        fig, filename=f"{group_of_interest}_corr", auto_open=False)
-    print("Link ", link)
+    # # make public
+    # time = timestamp()
+    # link = py.plot(
+    #     fig, filename=f"{group_of_interest}_corr", auto_open=False)
+    # print("Link ", link)
