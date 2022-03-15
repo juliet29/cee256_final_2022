@@ -17,10 +17,15 @@ epluszsz.csv
 *.osm
 **/measures
 **/group_models
+**/models
 *.osw
 *.skp
+**/eppy_adjusted_models_2/**/eplusout.sql
 **/opt_models/**/eplusout.sql
-
+**/test_01
+**/floor_b1
+**/roof_2
+**/roof_b1
 
 
 **/__pycache__
