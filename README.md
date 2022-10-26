@@ -1,6 +1,4 @@
-# cee256_final_2022
-
-## CEE256 Final Project using EnergyPlus
+# CEE256 Final Project using EnergyPlus
 
 The goal of this project was to create a model of an existing building and
 calibrate it using historical data. By performing a sensitivity analysis, it was
